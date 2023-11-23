@@ -1,0 +1,66 @@
+import streamlit as st 
+from pandasai.llm.openai import OpenAI
+from dotenv import load_dotenv
+import os
+import pandas as pd
+from pandasai import PandasAI
+from streamlit_option_menu import option_menu
+
+load_dotenv()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+
+selected = option_menu(
+    menu_title=None,  # required
+    options=["Home", "Projects"],  # required
+    icons=["house", "book"],  # optional
+    menu_icon="cast",  # optional
+    default_index=0,  # optional
+    orientation="horizontal",
+    styles={
+                "container": {"padding": "0!important", "background-color": "#fafafa"},
+                "icon": {"color": "noire", "font-size": "25px"},
+                "nav-link": {
+                    "font-size": "25px",
+                    "text-align": "left",
+                    "margin": "0px",
+                    "--hover-color": "#FFF",
+                },
+                "nav-link-selected": {"background-color": "pink"},
+            },
+        )
+
+def chat_with_csv(df,prompt):
+    llm = OpenAI(api_token=openai_api_key)
+    pandas_ai = PandasAI(llm)
+    result = pandas_ai.run(df, prompt=prompt)
+    print(result)
+    return result
+
+
+
+st.title("BV LaB")
+input_csv = st.file_uploader("Upload your CSV file", type=['csv'] ,accept_multiple_files=True)
+if selected == "Home":
+    if input_csv is not None:
+        for csv in input_csv:
+            st.info("CSV Uploaded Successfully")
+            data = pd.read_csv(csv)
+            st.dataframe(data, use_container_width=True)
+
+if selected == "Projects":
+    st.info("Chat Below")
+    
+    input_text = st.text_area("Enter your query")
+
+    if input_text is not None:
+        if st.button("Chat with CSV"):
+            # Check if input_csv is not None before using it
+            if input_csv is not None:
+                for csv in input_csv:   
+                    st.info("Your Query: " + input_text)
+                    result = chat_with_csv(pd.read_csv(csv), input_text)
+                    st.success(result)
+            else:
+                    st.warning("Please upload a CSV file first.")
